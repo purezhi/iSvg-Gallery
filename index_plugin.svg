@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="no"?>
+
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg xmlns="http://www.w3.org/2000/svg" 
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    id="canvas"
+    width="100%" 
+    height="100%" 
+    version="1.1" baseProfile="full"
+    onload="initForOpera();">
+    
+    <title>iSvg Gallery</title>
+    <style type="text/css">
+    <![CDATA[
+        @import url("common/css/base.css");
+        @import url("common/css/default.css");
+    ]]>
+    </style>
+    <script type="text/javascript" xlink:href="./common/js/iSvgGallery.base.js"></script>
+    <script type="text/javascript" xlink:href="./common/js/iSvgGallery.data.js"></script>
+    <script type="text/javascript" xlink:href="./common/js/iSvgGallery.app.js"></script>
+    <script type="text/javascript">
+    <![CDATA[
+        function initForOpera() {
+            iSvgGallery.app();
+        }
+    ]]>
+    </script>
+    
+    <rect id="background-rect" x="0%" y="0%"></rect>
+    
+</svg>

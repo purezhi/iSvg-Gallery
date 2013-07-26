@@ -1,0 +1,10 @@
+/* Page */
+#pageContainer {
+	text-align: center;
+}
+
+#pageWrapper {
+	width: 800px;
+	margin: auto;
+	text-align: left;
+}

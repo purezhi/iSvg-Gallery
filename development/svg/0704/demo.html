@@ -1,0 +1,470 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Happy Ending</title>
+    <style type="text/css">
+        * {margin:0px; padding:0px;}
+        html, body {height:100%; overflow:hidden; }
+        html>body {width:auto; height:auto; position:absolute; top:0px; left:0px; right:0px; bottom:0px; } /*-- for !IE6.0 --*/
+        body {background:url("bg.jpg") top left repeat;}
+        svg {background: transparent;}
+    </style>
+    <script type="text/javascript">
+        if(window.attachEvent) { //IE
+            window.attachEvent("onload",doload);
+        } else if(window.addEventListener) { // not IE
+            window.addEventListener("load", doload, false);
+        }
+
+        var SVG = "http://www.w3.org/2000/svg";
+        var XLINK = "http://www.w3.org/1999/xlink";
+        // 操作热区
+        var hotspot = "rgba(0, 200, 200, 0.3)";
+        // 变形参数
+        var currentTransform = null;
+
+        ///
+        // 入口函数
+        // 画面加载完毕时调用
+        ///
+        function doload() {
+            var images;
+
+            // 加载一些图片
+            // 额外的，可使用file://加载OSX或者Windows Vista系统的标准壁纸，以作测试用
+            try {
+                // 当前文件运行在服务器时，加载Flickr的图片
+                if (document.location.toString().indexOf("http") != -1) {
+                    images = [ "http://farm1.static.flickr.com/234/535566372_33c1025c7b_o.jpg",
+                            "http://farm2.static.flickr.com/1159/534271166_db0f114a5d_o.jpg",
+                            "http://farm1.static.flickr.com/120/313853602_d759910c1e_b.jpg",
+                            "http://farm1.static.flickr.com/122/313940834_8bf97d364e_b.jpg" ];
+                } else if (document.location.toString().toLowerCase().indexOf("users") != -1) { // OSX系统
+                    images = ["file:///Library/Desktop Pictures/Nature/Flowing Rock.jpg",
+                            "file:///Library/Desktop Pictures/Nature/Stones.jpg",
+                            "file:///Library/Desktop Pictures/Plants/Lotus.jpg",
+                            "file:///Library/Desktop Pictures/Plants/Dandelion.jpg" ];
+                } else { // Windows Vista系统
+                    images = [ "file:///d:/p/535566372_33c1025c7b_o.jpg",
+                            "file:///d:/p/534271166_db0f114a5d_o.jpg",
+                            "file:///d:/p/313853602_d759910c1e_b.jpg",
+                            "file:///d:/p/313940834_8bf97d364e_b.jpg" ];
+                    images = [ "535566372_33c1025c7b_o.jpg",
+                            "534271166_db0f114a5d_o.jpg",
+                            "313853602_d759910c1e_b.jpg",
+                            "313940834_8bf97d364e_b.jpg" ];
+                }
+
+            } catch (e) { // 加载时，异常发生，默认加载Flickr的图片
+                images = [ "http://farm1.static.flickr.com/234/535566372_33c1025c7b_o.jpg",
+                        "http://farm2.static.flickr.com/1159/534271166_db0f114a5d_o.jpg",
+                        "http://farm1.static.flickr.com/120/313853602_d759910c1e_b.jpg",
+                        "http://farm1.static.flickr.com/122/313940834_8bf97d364e_b.jpg" ];
+            }
+
+            // 在后台加载图片，当图片加载完毕后（一般由浏览器缓存），执行循环里的处理
+            for (var k = 0; k < images.length; k++) {
+                var img = new Image();
+
+                // 为使函数取得正确的变量，使用匿名函数
+                img.onload = function(k, url) { return function() {
+                        var g = addImage(url, 1.0); // 取得图片的顶级容器组(g)
+                        
+                        // 对图片的顶级容器组(g)进行样式设定和随机变形
+                        g.style.opacity = 1.0;
+                        g.vTranslate = [100 + Math.random() * 300 + (k%3) * 250, 100 + Math.random() * 300 + (k/3) * 280]; // 元素中心点坐标 位移
+                        var c = 0.25 + (Math.random() * .25);
+                        g.vScale = c; // 0.25; // 0.001; // 按比例大小变化 
+                        g.vRotate = (Math.random() * 40) - 20; // 旋转
+
+                        // 执行变形
+                        setupTransform(g.id);
+                        
+                        // 降低透明度
+                        rampOpacityUp(g);
+                    }
+                } (k, images[k]);
+                
+                // 图片属性设置
+                img.src = images[k];
+            }
+
+            // 添加鼠标移动时和鼠标按键弹起时处理函数
+            // 添加对象: svg[ID=canvas], rect[ID=background-rect]
+            document.getElementById("canvas").addEventListener("mousemove", onMouseMove, false);
+            document.getElementById("canvas").addEventListener("mouseup", onMouseUp, false);
+            document.getElementById("background-rect").addEventListener("mousemove", onMouseMove, false);
+            document.getElementById("background-rect").addEventListener("mouseup", onMouseUp, false);
+        }
+
+        ///
+        // 设定元素的X、Y、Width和Height属性的工具函数
+        ///
+        function svgSetXYWH(el, x, y, w, h) {
+            el.setAttribute("x", x);
+            el.setAttribute("y", y);
+            el.setAttribute("width", w);
+            el.setAttribute("height", h);
+        }
+
+        ///
+        // 根据提供填充和触笔，创建一个可点击的rect[x,y,w,h]元素，
+        // 并添加鼠标按键按下时处理函数
+        ///
+        function newClickableRect(id, x, y, w, h, fill, stroke, handler) {
+            var p = document.createElementNS(SVG, "rect");
+            p.setAttribute("id", id);
+            svgSetXYWH(p, x, y, w, h);
+            p.setAttribute("rx", 30); // 默认X方向圆角
+            p.setAttribute("ry", 30); // 默认Y方向圆角
+            p.setAttribute("fill", fill);
+            // p.setAttribute("stroke", stroke);
+            // p.setAttribute("stroke-width", 10);
+            p.addEventListener("mousedown", handler, false);
+            
+            return p;
+        }
+
+        ///
+        // 根据提供的图片地址，
+        // 创建对应的图片元素(image)、顶级容器组(g)和可点击的操作热区(rect)
+        ///
+        var nextImageId = 0; // 图片ID
+        function addImage(url, initOpacity) {
+            var imgw = 1000; // 图片默认宽度
+            var imgh = 700; // 图片默认高度
+            
+            // 初始化图片对应的顶级容器组(g)的ID
+            var id = nextImageId++;
+            var s = "image" + id;
+            
+            // 创建顶级容器组(g)
+            var g = document.createElementNS(SVG, "g");
+            g.setAttribute("id", s);
+            g.addEventListener("mouseover", onEnterImage, false); // 鼠标移到图片上时
+            g.addEventListener("mouseout", onExitImage, false); // 鼠标从图片移开时
+            g.addEventListener("mousedown", function(evt) { startTransform(evt, "c", "move"); evt.preventDefault(); }, false); // 鼠标按下时: 设置变形参数，变换透明度
+
+            // 初始化透明度
+            if (initOpacity != null) {
+                g.style.opacity = initOpacity;
+            }
+
+            // 创建对应的图片元素(image)
+            var image = document.createElementNS(SVG, "image");
+            image.setAttribute("id", s+"-img"); // 图片元素(image)ID
+            svgSetXYWH(image, -imgw/2, -imgh/2, imgw, imgh); 
+            image.setAttribute("preserveAspectRatio", "xMinYMin slice"); // 设定图片缩放
+            image.setAttributeNS(XLINK, "href", url); // 为图片添加链接
+            g.appendChild(image); // 把对应的图片元素(image)添加到顶级容器组(g)中
+
+            // 为对应的图片元素(image)添加边框
+            var rect = document.createElementNS(SVG, "rect");
+            rect.setAttribute("id", s+"-border");
+            svgSetXYWH(rect, -imgw/2, -imgh/2, imgw, imgh);
+            rect.setAttribute("stroke", "black"); // 触笔颜色
+            rect.setAttribute("rx", "10"); // 边框X方向圆角
+            rect.setAttribute("ry", "10"); // 边框Y方向圆角
+            rect.setAttribute("stroke-width", "20"); // 触笔宽度
+            rect.setAttribute("fill", "none"); // 边框填充颜色
+            g.appendChild(rect); // 把对应的图片元素(image)的边框添加到顶级容器组(g)中
+
+            // 创建对应的图片元素(image)的操作热区覆盖层(g)
+            var g2 = document.createElementNS(SVG, "g");
+            g2.setAttribute("id", s+"-overlay"); // 操作热区覆盖层(g)ID
+            g2.setAttribute("class", "image-overlay"); // 操作热区覆盖层(g)的CSS类
+            g2.setAttribute("style", "visibility: hidden"); // 默认不显示
+
+            // 创建对应的图片元素(image)的操作热区(rect)
+            var rsz = 200; // 操作热区(rect)的长宽值
+            // 位置: 左上角
+            g2.appendChild(
+                    newClickableRect(
+                            s+"-tl", // ID
+                            -imgw/2, // X坐标
+                            -imgh/2, // Y坐标
+                            rsz, // 宽度
+                            rsz, // 高度
+                            hotspot, // 填充
+                            "rgba(100, 100, 100, 0.5)", // 触笔
+                            function (evt) { return startTransform(evt, 'tl', 'rotate'); } // 鼠标按下时: 设置变形参数，变换透明度
+                    )
+            );
+            // 位置: 右上角
+            g2.appendChild(
+                    newClickableRect(
+                            s+"-tr", // ID
+                            imgw/2-rsz, // X坐标
+                            -imgh/2, // Y坐标
+                            rsz, // 宽度
+                            rsz, // 高度
+                            hotspot, // 填充
+                            "rgba(100, 100, 100, 0.5)", // 触笔
+                            function (evt) { return startTransform(evt, 'tr', 'rotate'); } // 鼠标按下时: 设置变形参数，变换透明度
+                    )
+            );
+            // 位置: 右下角
+            g2.appendChild(
+                    newClickableRect(
+                            s+"-br", // ID
+                            imgw/2-rsz, // X坐标
+                            imgh/2-rsz, // Y坐标
+                            rsz, // 宽度
+                            rsz, // 高度
+                            hotspot, // 填充
+                            "rgba(100, 100, 100, 0.5)", // 触笔
+                            function (evt) { return startTransform(evt, 'br', 'rotate'); } // 鼠标按下时: 设置变形参数，变换透明度
+                    )
+            );
+            // 位置: 左下角
+            g2.appendChild(
+                    newClickableRect(
+                            s+"-bl", // ID
+                            -imgw/2, // X坐标
+                            imgh/2-rsz, // Y坐标
+                            rsz, // 宽度
+                            rsz, // 高度
+                            hotspot, // 填充
+                            "rgba(100, 100, 100, 0.5)", // 触笔
+                            function (evt) { return startTransform(evt, 'bl', 'rotate'); } // 鼠标按下时: 设置变形参数，变换透明度
+                    )
+            );
+            /*
+            // 位置: 中央
+            g2.appendChild(
+                    newClickableRect(
+                            s+"-c", // ID
+                            -rsz/2, // X坐标
+                            -rsz/2, // Y坐标
+                            rsz, // 宽度
+                            rsz, // 高度
+                            hotspot, // 填充
+                            "rgba(100, 100, 100, 0.5)", // 触笔
+                            function (evt) { return startTransform(evt, 'c', 'scale'); } // 鼠标按下时: 设置变形参数，变换透明度
+                    )
+            );
+            */
+            g.appendChild(g2); // 把对应的图片元素(image)的操作热区覆盖层添加到顶级容器组(g)中
+
+            document.getElementById("canvas").appendChild(g); // 把图片对应的顶级容器组(g)添加到SVG标签中
+
+            return g; // 返回图片对应的顶级容器组(g)
+        }
+
+        ///
+        // 把ID为s的元素放置到最前面
+        ///
+        function bringToFront(s) {
+            var el = document.getElementById(s);
+            
+            // 先删除，后重新添加
+            el.parentNode.removeChild(el);
+            document.getElementById("canvas").appendChild(el);
+        }
+
+        ///
+        // 从事件参数中取得目标对象对应的顶级容器组(g)的ID
+        ///
+        function baseName(ev) {
+            var id = ev.target.getAttribute("id");
+            return id.substr(0, id.indexOf("-"));
+        }
+
+        ///
+        // 鼠标移到图片上时处理函数
+        ///
+        function onEnterImage(ev) {
+            // 取得目标对象对应的顶级容器组(g)的ID，取得不到时，异常返回
+            var e = baseName(ev);
+            if (!e) {
+                return;
+            }
+            
+            // 显示操作热区覆盖层
+            document.getElementById(e + '-overlay').style.visibility = "visible";
+            ev.preventDefault();
+        }
+
+        ///
+        // 鼠标从图片移开时处理函数
+        ///
+        function onExitImage(ev) {
+            // 取得目标对象对应的顶级容器组(g)的ID，取得不到时，异常返回
+            var e = baseName(ev);
+            if (!e) {
+                return;
+            }
+            
+            // 隐藏操作热区覆盖层
+            document.getElementById(e + '-overlay').style.visibility = "hidden";
+            
+            ev.preventDefault();
+        }
+
+        ///
+        // 操作热区处理函数
+        ///
+        function startTransform(ev, corner, what) {
+            // 当其他变形在执行的过程中，忽略本次操作
+            if (currentTransform != null) {
+                return;
+            }
+
+            // 取得目标对象对应的顶级容器组(g)的ID，取得不到时，异常返回
+            var e = baseName(ev);
+            if (!e) {
+                return;
+            }
+
+            // 把目标对象放置到最前面
+            bringToFront(e);
+            // 取得目标对象对应的顶级容器组(g)
+            var g = document.getElementById(e);
+            // 取得目标对象对应的图片及最小比例
+            var img = document.getElementById(e+"-img");
+            var sx = 300/img.width.baseVal.value > 200/img.height.baseVal.value ? 300/img.width.baseVal.value : 200/img.height.baseVal.value;
+
+            currentTransform = { 
+                what: what, // 变形类型
+                el: e, // 触发元素对应的顶级容器组(g)的ID
+                corner: corner, // 矩形的角
+                g: g, // 触发元素对应的顶级容器组(g)的ID
+                s: g.vScale, // 比例
+                sx: sx, // 最小比例
+                r: g.vRotate, // 旋转角度
+                t: g.vTranslate, // 元素中心点坐标
+                x: ev.clientX, // 事件触发点(原坐标)的X坐标
+                y: ev.clientY // 事件触发点(原坐标)的Y坐标
+            };
+
+            // 增加透明度
+            rampOpacityDown(currentTransform.g);
+        }
+
+        ///
+        // 执行变形
+        // 将对应元素的变形参数转化成SVG变形语句
+        ///
+        function setupTransform(s) {
+            var g = document.getElementById(s);
+            var g2 = document.getElementById(s + "-overlay");
+
+            g.setAttribute("transform", "translate(" + g.vTranslate[0] + "," + g.vTranslate[1] + ") " +
+                    "scale(" + g.vScale + "," + g.vScale + ") " +
+                    "rotate(" + g.vRotate + ") ");
+        }
+        ///
+        // 鼠标按键弹起时处理函数：降低透明度
+        ///
+        function onMouseUp(ev) {
+            // 变形参数被设定，降低透明度
+            if (currentTransform) {
+                rampOpacityUp(currentTransform.g);
+            }
+
+            // 清空变形参数
+            currentTransform = null;
+            
+            ev.preventDefault();
+        }
+
+        ///
+        // 鼠标移动时处理函数：降低透明度
+        ///
+        function onMouseMove(ev) {
+            // currentTransform不是window的属性，或者currentTransform为null，直接返回
+            if (!("currentTransform" in window) || currentTransform == null) {
+                return;
+            }
+
+            var ex = ev.clientX; // 目的坐标的X坐标
+            var ey = ev.clientY; // 目的坐标的Y坐标
+            var pos = currentTransform.g.vTranslate; // 元素中心点坐标
+
+            // 旋转
+            if (currentTransform.what == "rotate") {
+                var r2d = 360.0 / (2.0 * Math.PI); // 弧度/角度转换单位制 -> 1弧度=?角度
+
+                // atan2(y,x) : 返回从 x 轴到点 (x,y) 的角度（介于 -PI/2 与 PI/2 弧度之间）
+                // 事件触发点(原坐标)与X轴夹角
+                // 事件触发点(原坐标) -> [currentTransform.x, currentTransform.y]
+                var lastAngle = Math.atan2(currentTransform.y - pos[1], currentTransform.x - pos[0]) * r2d; 
+                // 目的坐标与X轴夹角
+                // 目的坐标 -> [ex, ey]
+                var curAngle = Math.atan2(ey - pos[1], ex - pos[0]) * r2d;
+
+                // 旋转角度
+                currentTransform.g.vRotate += (curAngle - lastAngle);
+
+                // sqrt(x) : 返回数的平方根
+                // pow(x,y) : 返回 x 的 y 次幂
+                // 事件触发点(原坐标)到元素中心点坐标的距离
+                var lastLen = Math.sqrt(Math.pow(currentTransform.y - pos[1], 2) + Math.pow(currentTransform.x - pos[0], 2));
+                // 目的坐标到元素中心点坐标的距离
+                var curLen = Math.sqrt(Math.pow(ey - pos[1], 2) + Math.pow(ex - pos[0], 2));
+
+                // 变形比例
+                var calcScale = currentTransform.g.vScale * (curLen / lastLen);
+                currentTransform.g.vScale = calcScale > currentTransform.sx ? (calcScale > 1 ? 1 : calcScale) : currentTransform.sx; 
+
+            // 移动
+            } else if (currentTransform.what == "move") {
+                // XY坐标位移
+                var xd = ev.clientX - currentTransform.x;
+                var yd = ev.clientY - currentTransform.y;
+
+                // 元素中心点坐标
+                currentTransform.g.vTranslate = [ pos[0] + xd, pos[1] + yd ];
+            }
+
+            // 变形的坐标
+            currentTransform.x = ex;
+            currentTransform.y = ey;
+
+            // 执行变形
+            setupTransform(currentTransform.el);
+
+            ev.preventDefault();
+        }
+
+        ///
+        // 增加透明度
+        ///
+        function rampOpacityDown(g) {
+            g.style.opacity = 1.0; // 默认不透明
+            var rampFunc = function () {
+                var o = parseFloat(g.style.opacity) - 0.05;
+                g.style.opacity = o;
+                if (o > 0.7) {
+                    setTimeout(rampFunc, 10); // 定时递归调用
+                }
+            }
+
+            rampFunc();
+        }
+
+        ///
+        // 降低透明度
+        ///
+        function rampOpacityUp(g) {
+            g.style.opacity = 0.7; // 默认透明度: 0.7
+            var rampFunc = function () {
+                var o = parseFloat(g.style.opacity) + 0.05;
+                g.style.opacity = o;
+                if (o < 1.0) {
+                    setTimeout(rampFunc, 10); // 定时递归调用
+                }
+            }
+
+            rampFunc();
+        }
+    </script>
+</head>
+<body>
+    <!--object type="image/svg+xml" data="filter.xml" height="300" width="600"></object-->
+    <svg id="canvas" width="100%" height="100%">
+        <rect id="background-rect" x="0%" y="0%" width="100%" height="100%" style="fill:#fff; stroke:pink; stroke-width:5; opacity:0.1"/>
+    </svg>
+</body>
+</html>

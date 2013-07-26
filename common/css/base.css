@@ -1,0 +1,3 @@
+﻿* { margin:0px; padding:0px; }
+html, body { height:100%; overflow:hidden; }
+html>body { width:auto; height:auto; position:absolute; top:0px; left:0px; right:0px; bottom:0px; } /*-- for !IE6.0 --*/

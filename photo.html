@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>iSvg Gallery</title>
+    <link rel="stylesheet" type="text/css" href="./common/css/layout.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="./common/css/photo.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="./common/css/jquery-ui/jquery.fancybox-1.3.1.css" media="screen" />
+    
+    <script type="text/javascript" src="./common/js/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="./common/js/jquery-ui/jquery.mousewheel-3.0.2.pack.js"></script>
+    <script type="text/javascript" src="./common/js/jquery-ui/jquery.fancybox-1.3.1.mod.pack.js"></script>
+    
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // MY PHOTO GALLERY
+            $("a[rel=my-photo-gallery]").fancybox({
+                'transitionIn' : 'elastic',
+                // 'transitionOut' : 'none',
+                'titlePosition' : 'over',
+                'titleFormat' : function(title, currentArray, currentIndex, currentOpts) {
+                    return '<span id="fancybox-title-over">' + (title.length ? '【&nbsp;' + title + '&nbsp;】' : '') + '&#8592;第' + (currentIndex + 1) + '张/共' + currentArray.length + '张&#8594;' + '</span>';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="pageContainer">
+        <div id="pageWrapper">
+            <div class="clear" id="photo-slide">
+                <a rel="my-photo-gallery" href="images/313853602_d759910c1e_b.jpg" title="无名"><img alt="无名" src="images/313853602_d759910c1e_b-s.jpg" /></a>
+                <a rel="my-photo-gallery" href="images/313940834_8bf97d364e_b.jpg" title="无名"><img alt="无名" src="images/313940834_8bf97d364e_b-s.jpg" /></a>
+                <a rel="my-photo-gallery" href="images/534271166_db0f114a5d_o.jpg" title="无名"><img alt="无名" src="images/534271166_db0f114a5d_o-s.jpg" /></a>
+                <a rel="my-photo-gallery" href="images/535566372_33c1025c7b_o.jpg" title="无名"><img alt="无名" src="images/535566372_33c1025c7b_o-s.jpg" /></a>
+            </div><!-- div#mainWrapper -->
+            <div id="browser-tip">
+                相册是基于SVG的程序，需要较高版本的浏览器才能运行。<br/>
+                （注：IE需要9以上的版本，或者安装有<a href="http://www.adobe.com/svg/viewer/install/" target="_blank">SVG插件</a>的IE6以上的版本，其他浏览器主流版本皆可。）
+                <img alt="无名" src="./common/images/browsers.jpg" />
+            </div>
+        </div><!-- div#wrapper -->
+    </div><!-- div#pageContainer -->
+</body>
+</html>

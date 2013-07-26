@@ -1,0 +1,41 @@
+body {
+    background-color: #EAF4F6;
+}
+
+#photo-slide a, a:link, a:visited {
+    color: #126cff;
+    text-decoration: none;
+}
+
+#photo-slide a:hover {
+    text-decoration: underline;
+}
+
+#photo-slide a img {
+    border:1px solid #BBBBBB;
+    margin:10px 30px 10px 0;
+    padding:2px;
+    width: 75px;
+    height: 75px;
+    vertical-align:top;
+}
+
+#photo-slide {
+    background: url("img/photo-slide_bg.png")  no-repeat scroll 0 0 transparent;
+    padding-top: 75px;
+    margin-top: 80px;
+}
+
+#browser-tip {
+    background: #fff;
+    border: 1px solid #ccc;
+    font-family: "微软雅黑", Verdana, "宋体";
+    font-size: 14px;
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px 25px;
+}
+
+#browser-tip img {
+    margin-top: 15px;
+}

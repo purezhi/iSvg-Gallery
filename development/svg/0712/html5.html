@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Html5 Test</title>
+		<!--[if lt IE 9]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+		<style type="text/css">
+			canvas {border: 1px #CCC solid;}
+			#console {width: 500px;}
+		</style>
+	</head>
+	<body>
+		<canvas id="cvs" width="300" height="200"> 
+			Fallback content, in case the browser does not support Canvas.
+		</canvas> 
+		<p>X:<input type="text" id="xinfo" /></p>
+		<p>Y:<input type="text" id="yinfo" /></p>
+		<p>KEY:<input type="text" id="kbinfo" /></p>
+		<p>Output:<input type="text" id="console" /></p>
+		<script type="text/javascript"> 
+			if(!!document.createElement('canvas').getContext) {
+				var canvas = document.getElementById("cvs");
+				var ctx = canvas.getContext("2d");
+				
+				// Output
+				function echo(str) {
+					document.getElementById("console").value = str;
+				}
+				
+				// attach event listener to a node
+				function addEventWatcher(el, ev, handler) {
+					if (el.attachEvent){
+						el.attachEvent('on'+ev, handler);
+					}
+					else{
+						el.addEventListener(ev, handler, false);
+					}
+				}
+				
+				if(ctx) {
+				/******************************************************/
+					ctx.clearRect(0,0,300,200)  ;// 清除以（0,0）为左上坐标原点，300*200 矩形区域内所有像素
+					ctx.fillStyle = '#00f';   // 设置矩形的填充属性，#00f 代表蓝色
+					ctx.strokeStyle = '#f00';  // 设置矩形的线条颜色，#f00 代表红色
+					/* 简单图形绘制
+					ctx.fillRect(50,25,150,80); // 使用 fillStyle 填充一个 150*80 大小的矩形
+					ctx.strokeRect(45,20, 160, 90);  // 以 strokeStype 属性为边的颜色绘制一个无填充矩形
+					*/
+					
+					/* 绘制路径
+					ctx.beginPath(); 
+					ctx.arc(75,75,30,0,Math.PI, false);  // 绘制一条半圆弧线
+					ctx.closePath();    // 自动绘制一条直线来关闭弧线。若不调用此方法，将仅仅显示一条半圆弧
+					ctx.fill();      // 可以尝试注释掉 fill 或者 stroke 函数，观察图形的变化
+					ctx.stroke();
+					*/
+					
+					/* 二维变形 
+					ctx.translate(150,150);   // 将 canvas 的原点从 (0,0) 平移至（150,150）
+					for (i=1;i<=2;i++){        // 绘制内外 2 层
+						if ((i % 2) == 1) {
+							ctx.fillStyle = '#00f'; // #00f 代表蓝色
+						} else { 
+							ctx.fillStyle = '#f00'; // #00f 代表红色
+						} 
+						
+						ctx.save();             // 保持开始绘制每一层时的状态一致
+						for (j=0;j<=i*6;j++){   // 每层生成点的数量
+							ctx.rotate(Math.PI/(3*i));  // 绕当前原点将坐标系顺时针旋转 Math.Pi/(3*i) 度
+							ctx.beginPath(); 
+							ctx.arc(0, 20*i, 5, 0, Math.PI*2, true); 
+							ctx.fill();         // 使用 fillType 值填充每个点
+						} 
+						
+						ctx.restore();
+					} 
+					*/
+					
+					/* 像素级绘图 
+					// 从指定的矩形区域获取 canvas 像素数组
+					var imgdata = ctx.getImageData(100, 100, 100, 100);
+					var pixels = imgdata.data;
+
+					// 遍历每个像素并对 RGB 值进行取反
+					for(var i=0, n=pixels.length; i<n; i+= 4) {
+						pixels[i] = 255-pixels[i];
+						pixels[i+1] = 255-pixels[i+1];
+						pixels[i+2] = 255-pixels[i+2];
+					}
+					
+					// 在指定位置进行像素重绘
+					ctx.putImageData(imgdata, 100, 100);
+					*/
+					
+					/* 实现动画效果 
+					var x=0, y=0, dx=2, dy=3, context2D;   // 小球从（0,0）开始移动，横向步长为 2，纵向步长为 3 
+					
+					function draw(){ 
+						context2D.clearRect(0, 0, canvas.width, canvas.height);   // 清除整个 canvas 画面
+						// context2D.drawCircle(x, y);         // 使用自定义的画圆方法，在当前（x,y）坐标出画一个圆
+						context2D.fillStyle = '#f00';
+						context2D.beginPath();
+						context2D.arc(x, y, 5, 0, Math.PI*2, true);
+						context2D.fill();
+						
+						// 判断边界值，调整 dx/dy 以改变 x/y 坐标变化方向。
+						if (x + dx > canvas.width || x + dx < 0) dx = -dx; 
+						if (y + dy > canvas.height || y + dy < 0) dy = -dy; 
+						
+						x += dx; 
+						y += dy; 
+					}
+					context2D = ctx;
+					setInterval(draw, 20);     // 设置绘图周期为 20 毫秒
+					*/
+					
+					/* 提高可访问性 */
+					var g_x, g_y;    // 鼠标当前的坐标
+					var g_pointx=0, g_pointy=0;   // 蓝色小球当前的坐标
+
+					function drawCircle(x, y){    // 以鼠标当前位置为原点绘制一个蓝色小球
+						var ctx = canvas.getContext('2d'); 
+						ctx.clearRect(0,0,300,300); 
+						ctx.fillStyle = '#0f0'; 
+						ctx.beginPath(); 
+						ctx.arc(x, y, 15, 0, Math.PI*2, true); 
+						ctx.fill(); 
+						
+						g_pointx = x; 
+						g_pointy = y; 
+					} 
+
+					function onMouseMove(evt) { 
+						// 获取鼠标在 canvas 中的坐标位置
+						if(evt.srcElement) {
+							if (evt.offsetX || evt.offsetX == 0) { // FireFox 
+								g_x = evt.offsetX; 
+								g_y = evt.offsetY; 
+							} 
+						} else {
+							if (evt.layerX || evt.layerX == 0) { // FireFox 
+								g_x = evt.layerX; 
+								g_y = evt.layerY; 
+							} 
+						}
+						document.getElementById("xinfo").value = g_x; 
+						document.getElementById("yinfo").value = g_y; 
+					} 
+
+					function onKeyPress(evt) { 
+						var dx = 3;  // 横向平移步长
+						var dy = 3;  // 纵向平移步长
+						echo("g_x:"+g_x+" g_y:"+g_x+" g_pointx:"+g_pointx+" g_pointy:"+g_pointy);
+						var kbinfo = document.getElementById("kbinfo"); 
+						
+						if (evt.keyCode == 36){   
+							kbinfo.value="home"; 
+							
+							drawCircle(150, 100); 
+							document.getElementById("xinfo").value = 150; 
+							document.getElementById("yinfo").value = 100; 
+						}else if (evt.keyCode == 37){ 
+							kbinfo.value = "left"; 
+							if (g_pointx>dx) drawCircle(g_pointx-dx, g_pointy); 
+							
+							document.getElementById("xinfo").value = g_pointx; 
+						}else if (evt.keyCode == 38){ 
+							kbinfo.value = "up"; 
+							if (g_pointy>dy) drawCircle(g_pointx, g_pointy-dy); 
+							
+							document.getElementById("yinfo").value = g_pointy; 
+						}else if (evt.keyCode == 39){ 
+							kbinfo.value="right"; 
+							
+							if (g_pointx<300-dx) drawCircle(g_pointx+dx, g_pointy); 
+							document.getElementById("xinfo").value = g_pointx; 
+						}else if (evt.keyCode == 40){ 
+							kbinfo.value = "down"; 
+							if (g_pointy<200-dy) drawCircle(g_pointx, g_pointy+dy); 
+							
+							document.getElementById("yinfo").value = g_pointy; 
+						} 
+					} 
+					
+					// 增加 canvas 节点对鼠标单击，移动以及键盘事件的响应函数
+					// canvas.addEventListener('click', function(evt){drawCircle(g_x, g_y);}, false);
+					addEventWatcher(canvas, 'click', function(evt){drawCircle(g_x, g_y);});
+					// canvas.addEventListener('mousemove', onMouseMove, false); 
+					addEventWatcher(canvas, 'mousemove', onMouseMove);
+					// canvas.addEventListener('keydown', onKeyPress, false); 
+					// document.addEventListener('keydown', onKeyPress, false); 
+					addEventWatcher(document, 'keydown', onKeyPress);
+					canvas.focus();  // 获得焦点之后，才能够对键盘事件进行捕获
+					
+					
+					
+					
+					
+					
+				/******************************************************/
+				} //if(ctx)
+				
+			} else {
+				alert('Please upgrade you browser. Such as: \nFirefox 3.16+\nIE 9+\nOpera 11+\nChrome 10+\nSafari 4+');
+				
+			} //if(!!document.createElement('canvas').getContext)
+		</script>
+	</body>
+</html>

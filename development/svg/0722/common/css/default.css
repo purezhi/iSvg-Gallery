@@ -1,0 +1,19 @@
+﻿body { background:url("default/bg.jpg") top left repeat;}
+
+#canvas { background:transparent; width:100%; height:100% }
+#background-rect{ width:100%; height:100%; fill:#fff; stroke:pink; stroke-width:5; opacity:0.0; }
+
+.imageBorder { fill:none; stroke:black; opacity:1.0; }
+.imageOverlay {}
+.imageHotSpot { fill:rgba(0, 200, 200, 0.3); stroke:rgba(100, 100, 100, 0.5); opacity:1.0; }
+
+.coverBorder { fill:none; stroke:grey; stroke-width:30px; opacity:0.6; }
+
+.ctxMenuItem { fill:#EFF; stroke:whitesmoke; stroke-width:2px; stroke-opacity:0.8; }
+.ctxMenuItemHover { fill:#EFF; stroke:whitesmoke; stroke-width:2px; stroke-opacity:0.8; }
+.ctxMenuItemText { font-family:"微软雅黑", Verdana; font-size:14px; text-anchor:start; fill:#555; stroke-width:1px; }
+.ctxMenuItemTextHover { font-family:"微软雅黑", Verdana; font-size:14px; text-anchor:start; fill:olive; stroke-width:1px; }
+.ctxDividingLine { stroke:grey; stroke-width:2px; text-anchor:middle; alignment-baseline:central; }
+
+.tooltipBackground { fill:#126cff; stroke:#ddd; stroke-width:0; }
+.tooltipText { fill:#fff; font-size:14px; }

@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>iSvg Gallery</title>
+    <style type="text/css">
+        * { margin:0px; padding:0px; }
+        html, body { height:100%; overflow:hidden; }
+        html>body { width:auto; height:auto; position:absolute; top:0px; left:0px; right:0px; bottom:0px; } /*-- for !IE6.0 --*/
+        body { background:url("images/bg.jpg") top left repeat;}
+
+        #canvas { background:transparent; width:100%; height:100% }
+        #background-rect{ width:100%; height:100%; fill:#fff; stroke:pink; stroke-width:5; opacity:0.0; }
+        .ctxMenuItem { fill:#EFF; stroke:whitesmoke; stroke-width:2px; stroke-opacity:0.8; }
+        .ctxMenuItemHover { fill:#EFF; stroke:whitesmoke; stroke-width:2px; stroke-opacity:0.8; }
+        .ctxMenuItemText { font-family:"微软雅黑", Verdana; font-size:14px; text-anchor:start; fill:#555; stroke-width:1px; }
+        .ctxMenuItemTextHover { font-family:"微软雅黑", Verdana; font-size:14px; text-anchor:start; fill:olive; stroke-width:1px; }
+        .ctxDividingLine { stroke:grey; stroke-width:2px; text-anchor:middle; alignment-baseline:central; }
+
+        .tooltipBackground { fill:#126cff; stroke:#ddd; stroke-width:0; }
+        .tooltipText { fill:#fff; font-size:14px; }
+    </style>
+    <script type="text/javascript" src="common/js/iSvgGallery.base.js"></script>
+    <script type="text/javascript" src="common/js/iSvgGallery.data.js"></script>
+    <script type="text/javascript" src="common/js/iSvgGallery.app.js"></script>
+    <script type="text/javascript">
+        // 文档加载完毕后，执行程序
+        if(window.attachEvent) { //IE
+            window.attachEvent("onload", iSvgGallery.app);
+        } else if(window.addEventListener) { // not IE
+            window.addEventListener("load", iSvgGallery.app, false);
+        }
+    </script>
+</head>
+<body id="body">
+    <svg id="canvas" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <rect id="background-rect" x="0%" y="0%"></rect>
+    </svg>
+</body>
+</html>

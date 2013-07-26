@@ -1,0 +1,384 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     version="1.1"
+     baseProfile="full">
+    
+    <style type="text/css">
+    <![CDATA[
+        #menuTitle {
+            font-size: 25px;
+        }
+        
+        .choiceTitle {
+            font: bold 30px Times, serif;
+        }
+        
+        .description {
+            font: bold 20px Times, serif;
+        }
+        
+        .selectedRect {
+            fill: green;
+            stroke: #999;
+        }
+        
+        .selectedText {
+            font-weight: bold;
+        }
+        
+        .unselectedRect {
+            fill: red;
+            stroke: black;
+        }
+        
+        .unselectedText {
+            font-weight: normal;
+        }
+        
+        .hideDisplay {
+            display: none;
+        }
+        
+        .showDisplay {
+            display: block;
+        }
+    ]]>
+    </style>
+    <script type="text/javascript">
+    <![CDATA[
+        /*jslint
+            white: true, onevar: true, undef: true, newcap: true, nomen: true,
+            regexp: true, plusplus: true, bitwise: true, browser: true */
+        
+        (function () {
+            var svgDocument = document,                             // helps with performance and compression
+                svgns = 'http://www.w3.org/2000/svg',               // svg namespace
+                xlinkns = 'http://www.w3.org/1999/xlink',           // xlink namespace
+                choices = svgDocument.createElementNS(svgns, 'g'),  // group that holds all the menu choices
+                displays = svgDocument.createElementNS(svgns, 'g'), // group that holds all the displays for the choices
+                svgGrp = svgDocument.createElementNS(svgns, 'g'),   // group that contains everything on the page
+                rolledOver = false, // determines if a choice has been rolled over yet
+                pathSW = 10,        // the path stroke width
+                rHeight = 50,       // the rectangle height of a choice
+                rWidth = 100,       // the rectangle width of a choice
+                rStrokeWidth = 5,   // the rectangle stroke width of a choice
+                x = 100,            // the x coordinate of the upper left corner of the menu
+                y = 100,            // the y coordinate of the upper left corner of the menu
+                disWidth = 500,     // the width of the display area
+                disHeight = 400,    // the height of the display area
+                cWidth = rWidth + rStrokeWidth,   // the width of a choice
+                cHeight = rHeight + rStrokeWidth, // the height of a choice
+                pathAni = svgDocument.createElementNS(svgns, 'animate'),  // the path animation element
+                theTitle = svgDocument.createElementNS(svgns, 'text'),    // the menu title
+                titleAni = svgDocument.createElementNS(svgns, 'animate'), // the title animation
+                outlinePath = svgDocument.createElementNS(svgns, 'path'), // the path that outlines the menu
+                mHeight, // the menu height
+                x1,      // these are the points used for the path animation
+                x2,
+                x3,
+                x4,
+                y1,
+                y2,
+                y3,
+                pVals;   // the string of point values to animate through for the path
+            
+            /**
+             * Swap out the project preview.
+             */
+            function rollover(theTarget) {
+                var i,
+                    len = choices.childNodes.length,
+                    currChoice,
+                    targetParent = theTarget.parentNode,
+                    currDisplay,
+                    currChoiceNodes;
+                
+                rolledOver = true; // something has been rolled over
+                
+                for (i = 0; i < len; i += 1) {
+                    currChoice = choices.childNodes[i];
+                    currDisplay = displays.childNodes[i];
+                    if (currChoice === targetParent.parentNode) {
+                        targetParent.childNodes[0].setAttributeNS(null, 'class', 'selectedRect');
+                        targetParent.childNodes[1].setAttributeNS(null, 'class', 'selectedText');
+                        currDisplay.setAttributeNS(null, 'class', 'showDisplay');
+                    } else {
+                        currChoiceNodes = currChoice.childNodes[0].childNodes;
+                        currChoiceNodes[0].setAttributeNS(null, 'class', 'unselectedRect');
+                        currChoiceNodes[1].setAttributeNS(null, 'class', 'unselectedText');
+                        currDisplay.setAttributeNS(null, 'class', 'hideDisplay');
+                    }
+                }
+            }
+            
+            /**
+             * Searches through the string argument for '\n'. A new tspan is created every time that delimiter
+             * is found. Returns a text element made from the string divided into multiple lines.
+             */
+            function makeText(strText) {
+                // x is known since this function is used for making descriptions
+                var xVal = (x + rWidth + (rStrokeWidth / 2) + (pathSW / 2) + 20) + '',
+                    textElem = svgDocument.createElementNS(svgns, 'text'),
+                    ts, // a tspan
+                    tsArr = strText.split('\n'), // divide up the string
+                    tsArrLen = tsArr.length,
+                    i;
+                
+                for (i = 0; i < tsArrLen; i += 1) {
+                    ts = svgDocument.createElementNS(svgns, 'tspan');
+                    ts.setAttributeNS(null, 'dy', '1em');
+                    ts.setAttributeNS(null, 'x', xVal);
+                    ts.appendChild(svgDocument.createTextNode(tsArr[i]));
+                    textElem.appendChild(ts);
+                }
+                
+                return textElem;
+            }
+            
+            /**
+             * Highlights the choice that was moused over by calling the
+             * rollover function. Since this is registered multiple times,
+             * it is defined here instead of inline.
+             */
+            function highlight(e) {
+                // do this in a way that will also work in IE in case SVG and
+                // SMIL are implemented
+                e = e || window.event;
+                rollover(e.target || e.srcElement);
+            }
+            
+            /**
+             * Dynamically create and add a new choice to the menu.
+             * This makes it easy to change the number of choices later on.
+             */
+            function createChoice(cText, cLink, cTitle, cDesc, cPic) {
+                var cDescTextElem, // the description SVG text element
+                    cNum,          // this choice number
+                    cBegin,        // when this choice should begin to animate
+                    toPos,         // the position to animate to
+                    numChoices = choices.childNodes.length, // the number of choices already present
+                    choiceGrp,
+                    rect,
+                    choiceText,
+                    cAni,
+                    aElem,
+                    displayGrp,
+                    disTitle,
+                    disPic;
+                
+                if (numChoices === 0) { // choice 1
+                    cNum = 1;
+                    cBegin = 'thePathAni.begin+0.5s';
+                    toPos = x + ',' + y;
+                } else { // greater than choice 1
+                    // add one because it hasn't been added to the array yet
+                    cNum = numChoices + 1;
+                    
+                    // begin at the end of the previous animation
+                    cBegin = 'ani' + numChoices + '.end';
+                    
+                    // stop at the bottom of the previous choice
+                    toPos = x + ',' + ((numChoices * cHeight) + y);
+                    // y is how far the first one moved, so add it to the total
+                }
+                
+                choiceGrp = svgDocument.createElementNS(svgns, 'g'); // the group that holds this choice
+                choiceGrp.setAttributeNS(null, 'transform', 'translate(0,-' + cHeight + ')');
+                choiceGrp.addEventListener('mouseover', highlight, false);
+                
+                rect = svgDocument.createElementNS(svgns, 'rect');
+                rect.setAttributeNS(null, 'class', 'unselectedRect');
+                rect.setAttributeNS(null, 'x', '0');
+                rect.setAttributeNS(null, 'y', '0');
+                rect.setAttributeNS(null, 'width', rWidth + '');
+                rect.setAttributeNS(null, 'height', rHeight + '');
+                rect.setAttributeNS(null, 'stroke-width', rStrokeWidth + 'px');
+                choiceGrp.appendChild(rect);
+                
+                choiceText = svgDocument.createElementNS(svgns, 'text');
+                choiceText.setAttributeNS(null, 'class', 'unselectedText');
+                choiceText.setAttributeNS(null, 'x', (rWidth / 2) + '');
+                choiceText.setAttributeNS(null, 'y', (rHeight / 2) + '');
+                choiceText.setAttributeNS(null, 'text-anchor', 'middle');
+                choiceText.setAttributeNS(null, 'font-family', 'Helvetica');
+                choiceText.setAttributeNS(null, 'font-size', '20px');
+                choiceText.appendChild(svgDocument.createTextNode(cText));
+                choiceGrp.appendChild(choiceText);
+                
+                cAni = svgDocument.createElementNS(svgns, 'animateTransform');
+                cAni.setAttributeNS(null, 'attributeName', 'transform');
+                cAni.setAttributeNS(null, 'type', 'translate');
+                cAni.setAttributeNS(null, 'from', x + ',-80');
+                cAni.setAttributeNS(null, 'to', toPos);
+                cAni.setAttributeNS(null, 'dur', '0.5s');
+                cAni.setAttributeNS(null, 'fill', 'freeze');
+                cAni.setAttributeNS(null, 'id', 'ani' + cNum);
+                cAni.setAttributeNS(null, 'begin', cBegin);
+                choiceGrp.appendChild(cAni);
+                
+                aElem = svgDocument.createElementNS(svgns, 'a');
+                aElem.setAttributeNS(xlinkns, 'xlink:href', cLink);
+                aElem.appendChild(choiceGrp);
+                
+                choices.appendChild(aElem);
+                
+                
+                // create the display for this choice
+                displayGrp = svgDocument.createElementNS(svgns, 'g');
+                displayGrp.setAttributeNS(null, 'class', 'hideDisplay');
+                
+                disTitle = svgDocument.createElementNS(svgns, 'text');
+                disTitle.setAttributeNS(null, 'class', 'choiceTitle');
+                disTitle.setAttributeNS(null, 'x', (x + rWidth + (rStrokeWidth / 2) + (disWidth / 2)) + '');
+                disTitle.setAttributeNS(null, 'y', (y + (pathSW / 2) + 30) + '');
+                disTitle.setAttributeNS(null, 'text-anchor', 'middle');
+                disTitle.appendChild(svgDocument.createTextNode(cTitle));
+                displayGrp.appendChild(disTitle);
+                
+                cDescTextElem = makeText(cDesc);
+                cDescTextElem.setAttributeNS(null, 'class', 'description');
+                cDescTextElem.setAttributeNS(null, 'x', (x + rWidth + (rStrokeWidth / 2) + (pathSW / 2) + 20) + '');
+                cDescTextElem.setAttributeNS(null, 'y', (y + (pathSW / 2) + 60) + '');
+                displayGrp.appendChild(cDescTextElem);
+                
+                disPic = svgDocument.createElementNS(svgns, 'image');
+                disPic.setAttributeNS(xlinkns, 'xlink:href', cPic);
+                disPic.setAttributeNS(null, 'x', (x + rWidth + (rStrokeWidth / 2) + (pathSW / 2) + ((disWidth - 268) / 2)) + '');
+                disPic.setAttributeNS(null, 'y', (y + (pathSW / 2) + 150) + '');
+                disPic.setAttributeNS(null, 'height', '200');
+                disPic.setAttributeNS(null, 'width', '268');
+                displayGrp.appendChild(disPic);
+                
+                displays.appendChild(displayGrp);
+            }
+            
+            /**
+             * Creates a string that can be used as the values attribute of an animate element to draw a path
+             * @param {Array} points the complete path as an Array of Strings of x,y pairs
+             */
+            function createValues(points) {
+                var pLen = points.length,
+                    i,
+                    j,
+                    vals = [];
+                
+                for (i = 0; i < pLen; i += 1) {
+                    for (j = 0; j < i; j += 1) {
+                        if (j === 0) {
+                            vals[vals.length] = 'M' + points[j];
+                        } else if (j === 1) {
+                            vals[vals.length] = 'L' + points[j];
+                        } else if (j === pLen - 1 && i !== pLen - 1) {
+                            vals[vals.length] = points[j] + ';';
+                        } else {
+                            vals[vals.length] = points[j];
+                        }
+                    }
+                    while (j < pLen) {
+                        if (j === 0) {
+                            vals[vals.length] = 'M' + points[i];
+                        } else if (j === 1) {
+                            vals[vals.length] = 'L' + points[i];
+                        } else if (j === pLen - 1 && i !== pLen - 1) {
+                            vals[vals.length] = points[i] + ';';
+                        } else {
+                            vals[vals.length] = points[i];
+                        }
+                        j += 1;
+                    }
+                }
+                
+                return vals.join(' ');
+            }
+            
+            /**
+             * Selects the first choice in the menu if it has not been rolled
+             * over yet.
+             */
+            function selectFirstChoice() {
+                if (!rolledOver) {
+                    rollover(choices.firstChild.firstChild.firstChild);
+                }
+            }
+            
+            // set the menu title attributes
+            theTitle.setAttributeNS(null, 'id', 'menuTitle');
+            theTitle.setAttributeNS(null, 'x', '-50');
+            theTitle.setAttributeNS(null, 'y', (y - 25) + '');
+            theTitle.setAttributeNS(null, 'text-anchor', 'middle');
+            theTitle.appendChild(svgDocument.createTextNode('Projects'));
+            
+            // set its animate element attributes
+            titleAni.setAttributeNS(null, 'attributeName', 'x');
+            titleAni.setAttributeNS(null, 'from', '-50');
+            titleAni.setAttributeNS(null, 'to', x + (rWidth / 2) + '');
+            titleAni.setAttributeNS(null, 'begin', 'thePathAni.begin+1.5s');
+            titleAni.setAttributeNS(null, 'dur', '1s');
+            titleAni.setAttributeNS(null, 'fill', 'freeze');
+            
+            theTitle.appendChild(titleAni);
+            svgGrp.appendChild(theTitle);
+            
+            
+            // create the menu choices
+            // the createChoice function automatically appends the new choice to the choices and displays groups
+            createChoice('Project 1', '/projects/movie-picker/', 'Dynamic Element Creation',
+                'The goal of this project was to dynamically create\nchoices for the user to select and display the result.', 'pics/moviepicker.jpg');
+            
+            createChoice('Project 2', '', 'SVG Project',
+                'The goal of this project was to create a simple page\nusing SVG. You\'re looking at it!', 'pics/svg.jpg');
+            
+            createChoice('Project 3', '/projects/', 'Yahoo Widget Project',
+                'The goal of this project was to create a Yahoo Widget.', 'pics/widget.jpg');
+            
+            svgGrp.appendChild(choices);
+            svgGrp.appendChild(displays);
+            
+            
+            // set the path attributes
+            outlinePath.setAttributeNS(null, 'fill', 'none');
+            outlinePath.setAttributeNS(null, 'stroke', '#933');
+            outlinePath.setAttributeNS(null, 'stroke-width', pathSW + 'px');
+            
+            mHeight = cHeight * choices.childNodes.length; // calc menu height
+            
+            // determine the points in the path
+            x1 = 0;
+            x2 = x - (rStrokeWidth / 2) - (pathSW / 2);
+            x3 = x + cWidth - (rStrokeWidth / 2) + (pathSW / 2);
+            x4 = x + cWidth + disWidth;
+            y1 = y - (rStrokeWidth / 2) + (pathSW / 2);
+            y2 = y + mHeight - (rStrokeWidth / 2) + (pathSW / 2);
+            y3 = y + disHeight;
+            
+            pVals = createValues([x1 + ',' + y1, x2 + ',' + y1, x2 + ',' + y2, x3 + ',' + y2, x3 + ',' + y1, x4 + ',' + y1, x4 + ',' + y3, x3 + ',' + y3, x3 + ',' + y2]);
+            
+            // path animation
+            pathAni.setAttributeNS(null, 'attributeName', 'd');
+            pathAni.setAttributeNS(null, 'id', 'thePathAni');
+            pathAni.setAttributeNS(null, 'begin', 'indefinite');
+            pathAni.setAttributeNS(null, 'values', pVals);
+            pathAni.setAttributeNS(null, 'dur', '3s');
+            pathAni.setAttributeNS(null, 'calcMode', 'linear');
+            pathAni.setAttributeNS(null, 'fill', 'freeze');
+            
+            // when the animation is over, select the first choice
+            // endEvent is not implemented in all browsers
+            // fall back to attachEvent in case IE supports SVG in the future,
+            // but not addEventListener
+            if (document.addEventListener) {
+                pathAni.addEventListener('endEvent', selectFirstChoice, false);
+            } else if (document.attachEvent) {
+                pathAni.attachEvent('onendevent', selectFirstChoice);
+            }
+            
+            outlinePath.appendChild(pathAni);
+            svgGrp.appendChild(outlinePath);
+            
+            svgDocument.documentElement.appendChild(svgGrp); // add it all to the page
+            pathAni.beginElement(); // start the animations
+        }());
+    ]]>
+    </script>
+</svg>

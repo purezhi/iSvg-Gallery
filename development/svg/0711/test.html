@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Test</title>
+    <script type="text/javascript">
+        function load() {
+            document.getElementById("parent").addEventListener(
+                "click", 
+                function(evt){
+                    var el = document.getElementById("child").style.backgroundColor = "red";
+                    alert("element[child]'s color is changed to red.");
+                }, 
+                false
+            );
+            
+            document.getElementById("child").addEventListener(
+                "mousedown", 
+                function(evt){
+                    var el = this; 
+                    el.parentNode.removeChild(el); 
+                    el.style.backgroundColor = "yellow";
+                    document.getElementById("parent").appendChild(el);
+                }, 
+                false
+            );
+        }
+        
+        function reloadPage() {
+            var win= window.top; 
+            //while(win.parent) win = win.parent; 
+            alert(win.parent);
+            win.location.reload();
+        }
+        
+        function test() {
+            alert("new Object():  " + new Object());
+            alert("{}:  " + {});
+            alert("new Array():  " + new Array());
+            alert("[]:  " + []);
+        }
+
+        // 文档加载完毕后，执行程序
+        if(window.attachEvent) { //IE
+            window.attachEvent("onload", load);
+        } else if(window.addEventListener) { // not IE
+            window.addEventListener("load", load, false);
+        }
+    </script>
+</head>
+<body>
+    <div id="parent"  style="background:#eee; width:200px; height:200px; padding:20px;">
+        <div id="child" style="background:#ccc; width:100px; height:100px;">
+            test
+        </div>
+    </div>
+    <button onclick="reloadPage();">刷新页面</button>
+    <button onclick="test();">测试用</button>
+</body>
